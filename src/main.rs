@@ -70,9 +70,10 @@ fn main() {
 
     let window = gtk::Window::new(gtk::WindowType::Toplevel);
     window.set_title("Cairo API test");
-    let label = gtk::Label::new(None);
-    label.set_text(&1.to_string());
-    window.add(&label);
+    let label = Arc::new(Mutex::new(gtk::Label::new(None)));
+    let label2 = label.clone();
+    label.lock().unwrap().set_text(&1.to_string());
+    window.add(&*label.lock().unwrap());
     window.show_all();
 
     let max_count: Arc<Mutex<u32>> = Arc::new(Mutex::new(1));
@@ -80,7 +81,7 @@ fn main() {
     let notify_max_count = max_count.clone();
     let callback = || {
         let max_id = max_count.lock().unwrap();
-        label.set_text(&max_id.to_string());
+        label2.lock().unwrap().set_text(&max_id.to_string());
         gtk::Continue(false)
     };
 
