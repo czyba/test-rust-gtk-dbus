@@ -7,13 +7,14 @@ use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 
+use super::notification::Notification;
 
 
 pub enum DBUSEvent {
-    NOTIFICATION_RECEIVED,
+    NotificationReceived(Notification),
 }
 
-use self::DBUSEvent::NOTIFICATION_RECEIVED;
+use self::DBUSEvent::NotificationReceived;
 
 
 pub struct DBusThread {
@@ -55,27 +56,15 @@ impl DBusThread {
                     let _app_icon: &str = try!(iter.read());
                     let summary: &str = try!(iter.read());
                     let body: &str = try!(iter.read());
-                    let mut notification_id = replaces_id;
 
-                    // {
-                    //     let mut notification_map = active_notifications.lock().unwrap();
-                    //     if replaces_id == 0 || notification_map.contains_key(&replaces_id) {
-                    //         let mut max_id = notify_max_count.lock().unwrap();
-                    //         notification_id = *max_id;
-                    //         *max_id += 1;
-                    //     }
-                    //     notification_map.insert(notification_id, Notification {
-                    //         app_name: String::from(app_name),
-                    //         summary: String::from(summary),
-                    //         body: String::from(body),
-                    //         urgency: 1
-                    //     });
-                    // }
-
-                    from_dbus_chan_tx.send(NOTIFICATION_RECEIVED).unwrap();
+                    from_dbus_chan_tx.send(NotificationReceived(Notification {
+                        app_name: String::from(app_name),
+                        summary: String::from(summary),
+                        body: String::from(body),
+                        urgency: 1
+                    })).unwrap();
                     callback();
 
-                    println!("Received message:\napp: {}\nsummary: {}\nbody: {}\nid: {}", app_name, summary, body, replaces_id);
                     let mret = m.msg.method_return().append1(5);
                     Ok(vec!(mret))
                 }).inarg::<&str, _>("app_name")
